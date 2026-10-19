@@ -1,10 +1,3 @@
-"""Refresh public Blox Fruits codes; failed/empty scrapes never erase old data.
-
-Install: python -m pip install requests beautifulsoup4
-Run: python update_codes.py
-The JSON contract for Lua is {"updated_at": ..., "codes": ["CODE", ...]}.
-"""
-
 import json
 import os
 import re
@@ -47,7 +40,6 @@ def code_map(values):
 
 
 def validate_source(active, expired):
-    # A drastic layout change must be reviewed, not published as an empty list.
     if not 5 <= len(active) <= 200:
         raise ValueError(f"Implausible active code count: {len(active)}")
     if active.keys() & expired:
@@ -97,8 +89,6 @@ def parse_tgdd(html):
         headers = [label(c.get_text(" ", strip=True)) for c in rows[0].find_all(["th", "td"], recursive=False)]
         if not headers or not headers[0].startswith("code blox fruit") or "trang thai" not in headers:
             continue
-        # Secondary reward-specific tables can retain old codes. Only the main
-        # latest-code summary adds codes; explicit expiration rows still count.
         summary = headers[0] == "code blox fruit moi nhat"
         found_summary |= summary
         status_index = headers.index("trang thai")
@@ -145,8 +135,6 @@ def fetch_tgdd(session):
 def merge_codes(previous, results):
     if not results:
         raise ValueError("All sources failed; keeping codes.json unchanged")
-    # If one source fails, retain old entries unless a successful source
-    # explicitly marks them expired. When both work, rebuild from their lists.
     merged = code_map(previous) if len(results) < 2 else {}
     for name in ("tgdd", "wiki"):
         if name in results:
@@ -154,7 +142,6 @@ def merge_codes(previous, results):
             for key in source["expired"]:
                 merged.pop(key, None)
             merged.update(source["active"])
-    # Wiki is the deciding source when the two sites disagree.
     codes = sorted(merged.values(), key=str.casefold)
     if not codes:
         raise ValueError("Refusing to publish an empty code list")
@@ -176,7 +163,6 @@ def save_if_changed(path, previous, codes):
     os.replace(temp, path)
     print(f"Updated {len(codes)} codes")
     return True
-
 
 def main():
     previous = json.loads(OUTPUT.read_text(encoding="utf-8")) if OUTPUT.exists() else {"codes": []}
