@@ -151,17 +151,23 @@ def merge_codes(previous, results):
 
 
 def save_if_changed(path, previous, codes):
-    if previous.get("codes") == codes:
-        print(f"No changes ({len(codes)} codes); timestamp preserved")
-        return False
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    codes_changed = previous.get("codes") != codes
+
     data = {
-        "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "updated_at": now if codes_changed else previous.get("updated_at"),
+        "checked_at": now,
         "codes": codes,
     }
+
+    if data == previous:
+        print(f"No changes ({len(codes)} codes)")
+        return False
+
     temp = path.with_suffix(".json.tmp")
     temp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(temp, path)
-    print(f"Updated {len(codes)} codes")
+    print(f"Checked {len(codes)} codes at {now}")
     return True
 
 def main():
