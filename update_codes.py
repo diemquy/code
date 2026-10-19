@@ -151,7 +151,7 @@ def merge_codes(previous, results):
 
 
 def save_if_changed(path, previous, codes):
-    now = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    now = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).isoformat(timespec="seconds")
     codes_changed = previous.get("codes") != codes
 
     data = {
